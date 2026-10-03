@@ -1,9 +1,11 @@
 # The $12 Server Challenge
 
-How many users can one **$12/month server** (1 vCPU, 2 GB RAM) handle? The languages video put eight
-backends on the same box, with plain day-one code, and the fastest were Rust, Go and Java on SQLite.
+How many users can one **$12/month server** (1 vCPU, 2 GB RAM) handle? 
+
+I benchmarked 8 languages with basic unoptimized code using language defaults. https://www.youtube.com/watch?v=sQXFhh_PiG4
+
 **Now it's your turn: implement the same API in any language and framework, make it as fast as you can on
-SQLite, and we'll benchmark it on the same box.**
+SQLite, and I'll benchmark it on the same VM.**
 
 ## What's here
 
@@ -14,7 +16,7 @@ SQLite, and we'll benchmark it on the same box.**
 | [`seed/make-seed.sh`](seed/make-seed.sh) | Builds the seed database `seed/feed.db` (50k users, 500k posts, 2M likes) and `seed/tokens.json` |
 | [`test/test.sh`](test/test.sh) | The test suite (42 checks). Your server must pass all of them |
 | [`test/run.sh`](test/run.sh) | Builds your submission, starts it on a fresh database copy and runs the tests (what CI runs) |
-| [`bench/load.js`](bench/load.js) | The k6 load test we score with |
+| [`bench/load.js`](bench/load.js) | The k6 load test we score with (you can test this yourself before submission) |
 | [`bench/nginx.conf`](bench/nginx.conf) | The Nginx config in front of your server, if you want Nginx (rule 9) |
 
 ## Quick start
@@ -46,7 +48,7 @@ k6 run -e VUS=1000 bench/load.js                # optional: load test your serve
    its commit.
 7. No hard-coded responses, no detecting the load test, nothing that only works because it's a benchmark.
 
-**The box**
+**VM Specs and Info**
 8. It runs on Ubuntu 24.04 x86_64 on a DigitalOcean Basic droplet: 1 vCPU, 2 GB RAM, no swap. You share
    the CPU and RAM with the OS (and Nginx, if you use it). If you run out of memory, you lose.
 9. **Nginx is optional.** Either run behind our Nginx ([`bench/nginx.conf`](bench/nginx.conf), as in the video)
@@ -57,9 +59,6 @@ k6 run -e VUS=1000 bench/load.js                # optional: load test your serve
    and don't ship prebuilt binaries. It must come up healthy within 60 seconds of `start.sh`.
 11. Nothing on the box gets tuned for you: no kernel parameters, and no pinning of CPU or other processes.
     Settings inside your own process (GC, thread counts, allocator, pragmas allowed by rule 6) are fair game.
-
-When in doubt, open an issue before you build it. The spirit of the rules: **a real app that a real
-team could ship, made fast.**
 
 ## Submitting
 
@@ -102,11 +101,3 @@ separate machine. Every implementation in the video ran behind Nginx.
 3. **Confirm it**: one 5-minute hold at that number. If it fails, step down 250 users and try again.
 
 **Your score is the most users that pass a 5-minute hold** with p95 under 500 ms, p99 under 1 s and under 1% errors.
-The box is shared hardware, so results within ±10% count as a tie. We review the code of everything we run, and a
-submission that breaks the rules is removed.
-
-| # | Submission | Front | Users |
-|---|---|---|---:|
-| 1 | Rust, axum + sqlx (languages video) | Nginx | 14,050 |
-| 2 | Go, net/http + go-sqlite3 (languages video) | Nginx | 11,750 |
-| 3 | Java, Spring Boot 3 + sqlite-jdbc (languages video) | Nginx | 10,250 |
