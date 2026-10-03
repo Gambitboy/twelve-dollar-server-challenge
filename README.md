@@ -73,6 +73,22 @@ Open a pull request that adds one folder, `submissions/<language>-<framework>-<g
 | `README.md` | Language, framework, driver and versions; **Nginx or direct**; the optimizations you made and why |
 | your code | Under an OSI license (MIT is easiest) |
 
+For example, the three scripts for a Go server:
+
+```bash
+# install.sh: runs once as root on a clean Ubuntu 24.04
+set -euo pipefail
+apt-get update && apt-get install -y build-essential curl
+curl -fsSL https://go.dev/dl/go1.27.1.linux-amd64.tar.gz | tar -C /usr/local -xz
+
+# build.sh: runs as a normal user
+set -euo pipefail
+cd "$(dirname "$0")" && /usr/local/go/bin/go build -o bin/server .
+
+# start.sh: runs the server in the foreground
+exec "$(dirname "$0")/bin/server"
+```
+
 CI runs `install.sh` and `test/run.sh` on every pull request, and it must be green. Don't touch files outside your folder.
 
 ## Scoring
