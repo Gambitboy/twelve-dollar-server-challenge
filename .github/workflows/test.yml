@@ -23,10 +23,11 @@ jobs:
           elif [ "${{ github.event_name }}" = push ] && git rev-parse -q --verify HEAD~1 >/dev/null; then
             changed=$(git diff --name-only HEAD~1 HEAD)
           else
-            changed=$(ls -d submissions/*/ | sed 's#/$#/x#')
+            changed=$(ls -d submissions/*/ 2>/dev/null | sed 's#/$#/x#')
           fi
-          # a change outside submissions/ (spec, tests, seed) re-tests the reference
-          dirs=$(echo "$changed" | awk -F/ '$1=="submissions" && NF>2 {print $1"/"$2; next} NF {print "submissions/go-net-http"}' | sort -u | while read -r d; do [ -d "$d" ] && echo "$d"; done)
+          # a change outside submissions/ (spec, tests, seed) re-tests every submission
+          if echo "$changed" | grep -qv '^submissions/'; then changed=$(ls -d submissions/*/ 2>/dev/null | sed 's#/$#/x#'); fi
+          dirs=$(echo "$changed" | awk -F/ '$1=="submissions" && NF>2 {print $1"/"$2}' | sort -u | while read -r d; do [ -d "$d" ] && echo "$d"; done)
           echo "dirs=$(echo "$dirs" | jq -R . | jq -sc 'map(select(length>0))')" >> "$GITHUB_OUTPUT"
           echo "testing: $dirs"
 

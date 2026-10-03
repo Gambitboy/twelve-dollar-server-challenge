@@ -11,10 +11,14 @@ Your server reads its config from these environment variables:
 |---|---|
 | `SQLITE_PATH` | path to a fresh copy of `seed/feed.db` (WAL mode, schema in `schema.sql`) |
 | `JWT_SECRET` | `twelve-dollar-challenge` |
-| `HOST`, `PORT` | `127.0.0.1`, `3000` |
+| `HOST`, `PORT` | `127.0.0.1`, `3000` behind Nginx; `0.0.0.0`, `80` if you serve directly |
 
-Nginx (`bench/nginx.conf`) sits in front and talks HTTP/1.1 with keep-alive to `HOST:PORT`. Keep idle
-connections open for at least 65 s so Nginx never reuses a socket you just closed.
+Listen on `HOST:PORT` and speak HTTP/1.1 with keep-alive. Compression is optional.
+
+- **Behind Nginx** (`bench/nginx.conf`): Nginx keeps up to 64 idle connections to you. Keep idle connections
+  open for at least 65 s so Nginx never reuses a socket you just closed.
+- **Direct**: every k6 user holds its own keep-alive connection, so expect up to ~15,000 open connections.
+  Your service gets `LimitNOFILE=65535` and `CAP_NET_BIND_SERVICE` (it doesn't run as root).
 
 ## Responses
 
@@ -37,7 +41,7 @@ connections open for at least 65 s so Nginx never reuses a socket you just close
 | `POST /posts` (auth) | 201 | `{"post":{"id":…,"body":<trimmed body>,"created_at":…,"author":<token username>,"like_count":0}}`. Request body: `{"body":"..."}` |
 | `POST /posts/:id/like` (auth) | 201 first time, 200 on repeats | `{"liked":true,"already_liked":<bool>,"post_id":<int>}`. One like per (user, post) |
 
-For reference, this is what the reference submission runs (one query per request). You can write your own SQL.
+For reference, these are the queries the implementations in the video ran (one per request). You can write your own SQL.
 
 ```sql
 -- post object (+ "ORDER BY p.created_at DESC, p.id DESC LIMIT 20" for the feed, or "WHERE p.id = ?")

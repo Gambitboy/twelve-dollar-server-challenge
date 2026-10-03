@@ -15,13 +15,13 @@ SQLite, and we'll benchmark it on the same box.**
 | [`test/test.sh`](test/test.sh) | The test suite (42 checks). Your server must pass all of them |
 | [`test/run.sh`](test/run.sh) | Builds your submission, starts it on a fresh database copy and runs the tests (what CI runs) |
 | [`bench/load.js`](bench/load.js) | The k6 load test we score with |
-| [`submissions/go-net-http/`](submissions/go-net-http/) | The reference: Go + SQLite from the video. Beat it |
+| [`bench/nginx.conf`](bench/nginx.conf) | The Nginx config in front of your server, if you want Nginx (rule 9) |
 
 ## Quick start
 
 ```bash
 bash seed/make-seed.sh                          # needs node >= 18 and sqlite3; about a minute
-cp -r submissions/go-net-http submissions/rust-axum-yourname    # or start from scratch
+mkdir submissions/rust-axum-yourname            # your code + install.sh, build.sh, start.sh, README.md
 bash test/run.sh submissions/rust-axum-yourname # needs curl, jq, openssl
 k6 run -e VUS=1000 bench/load.js                # optional: load test your server yourself
 ```
@@ -47,11 +47,15 @@ k6 run -e VUS=1000 bench/load.js                # optional: load test your serve
 7. No hard-coded responses, no detecting the load test, nothing that only works because it's a benchmark.
 
 **The box**
-8. It runs on Ubuntu 24.04 x86_64 on a DigitalOcean Basic droplet: 1 vCPU, 2 GB RAM, no swap. Nginx
-   ([`bench/nginx.conf`](bench/nginx.conf)) and the OS share that RAM with you. If you run out of memory, you lose.
-9. It is built from source on the box with your `install.sh` and `build.sh`. Pin your dependency versions,
+8. It runs on Ubuntu 24.04 x86_64 on a DigitalOcean Basic droplet: 1 vCPU, 2 GB RAM, no swap. You share
+   the CPU and RAM with the OS (and Nginx, if you use it). If you run out of memory, you lose.
+9. **Nginx is optional.** Either run behind our Nginx ([`bench/nginx.conf`](bench/nginx.conf), as in the video)
+   on `127.0.0.1:3000`, or serve the internet directly on `0.0.0.0:80`. Going direct saves the CPU Nginx uses
+   (14–20% in the video), but then your server has to handle up to ~15,000 open keep-alive connections by
+   itself. Say which one you chose in your README.
+10. It is built from source on the box with your `install.sh` and `build.sh`. Pin your dependency versions,
    and don't ship prebuilt binaries. It must come up healthy within 60 seconds of `start.sh`.
-10. Nothing on the box gets tuned for you: no kernel parameters, and no pinning of CPU or other processes.
+11. Nothing on the box gets tuned for you: no kernel parameters, and no pinning of CPU or other processes.
     Settings inside your own process (GC, thread counts, allocator, pragmas allowed by rule 6) are fair game.
 
 When in doubt, open an issue before you build it. The spirit of the rules: **a real app that a real
@@ -66,7 +70,7 @@ Open a pull request that adds one folder, `submissions/<language>-<framework>-<g
 | `install.sh` | Run once as root on a clean Ubuntu 24.04: installs your toolchain/runtime (apt, official tarballs) |
 | `build.sh` | Builds your app as a normal user (may download pinned dependencies) |
 | `start.sh` | Runs the server **in the foreground**, configured only by the env vars in SPEC.md |
-| `README.md` | Language, framework, driver and versions; the optimizations you made and why |
+| `README.md` | Language, framework, driver and versions; **Nginx or direct**; the optimizations you made and why |
 | your code | Under an OSI license (MIT is easiest) |
 
 CI runs `install.sh` and `test/run.sh` on every pull request, and it must be green. Don't touch files outside your folder.
@@ -74,7 +78,7 @@ CI runs `install.sh` and `test/run.sh` on every pull request, and it must be gre
 ## Scoring
 
 We benchmark each passing submission exactly like the languages video: on the same droplet, with k6 on a
-separate machine.
+separate machine. Every implementation in the video ran behind Nginx.
 
 1. **Warm-up**: 1,000 users for 2 minutes (not scored).
 2. **Find the limit**: `bench/load.js` starting at 2,500 users, doubling until a run fails, then narrowing
@@ -85,8 +89,8 @@ separate machine.
 The box is shared hardware, so results within ±10% count as a tie. We review the code of everything we run, and a
 submission that breaks the rules is removed.
 
-| # | Submission | Users |
-|---|---|---:|
-| 1 | Rust, axum + sqlx (languages video) | 14,050 |
-| 2 | Go, net/http + go-sqlite3 (languages video, [`go-net-http`](submissions/go-net-http/)) | 11,750 |
-| 3 | Java, Spring Boot 3 + sqlite-jdbc (languages video) | 10,250 |
+| # | Submission | Front | Users |
+|---|---|---|---:|
+| 1 | Rust, axum + sqlx (languages video) | Nginx | 14,050 |
+| 2 | Go, net/http + go-sqlite3 (languages video) | Nginx | 11,750 |
+| 3 | Java, Spring Boot 3 + sqlite-jdbc (languages video) | Nginx | 10,250 |
