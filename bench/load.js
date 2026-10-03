@@ -3,15 +3,13 @@
  * A submission's score is the highest VUS that passes a 5-minute hold (see README.md).
  *
  *   k6 run -e VUS=2000 bench/load.js
- *   k6 run -e BASE_URL=http://10.0.0.5 -e VUS=8000 -e MIX=write-heavy bench/load.js
+ *   k6 run -e BASE_URL=http://10.0.0.5 -e VUS=8000 bench/load.js
  *
  * Env: BASE_URL (default http://127.0.0.1:3000), VUS (default 100), DURATION (default 5m),
- *      RAMP_UP (default 60s), MIX (realistic | write-heavy), TOKENS (default seed/tokens.json).
+ *      RAMP_UP (default 60s), TOKENS (default seed/tokens.json).
  *
  * User loop: GET /feed -> think 3-7 s -> GET /posts/:id (one from the feed) -> think 3-8 s
- *   -> maybe POST /posts/:id/like -> maybe POST /posts -> idle 5-15 s -> repeat.
- *   realistic:   like 15% of opened posts, write a post in 2% of loops  (~8% of requests are writes)
- *   write-heavy: like every opened post, write a post in 50% of loops  (~43% of requests are writes)
+ *   -> like it (15% chance) -> write a post (2% chance) -> idle 5-15 s -> repeat.
  *
  * Pass: p95 < 500 ms, p99 < 1000 ms, under 1% failed requests (k6 exits non-zero on a fail).
  */
@@ -21,8 +19,8 @@ import { SharedArray } from 'k6/data';
 
 const BASE_URL = __ENV.BASE_URL || 'http://127.0.0.1:3000';
 const VUS = Number(__ENV.VUS || 100);
-const MIX = __ENV.MIX || 'realistic';
-const [LIKE_PROB, POST_PROB] = { realistic: [0.15, 0.02], 'write-heavy': [1, 0.5] }[MIX];
+const LIKE_PROB = 0.15;
+const POST_PROB = 0.02;
 const tokens = new SharedArray('tokens', () => JSON.parse(open(__ENV.TOKENS || '../seed/tokens.json')));
 
 export const options = {

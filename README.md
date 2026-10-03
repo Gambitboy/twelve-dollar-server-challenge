@@ -1,8 +1,9 @@
 # The $12 Server Challenge
 
-How many users can one **$12/month server** (1 vCPU, 2 GB RAM) handle? The videos answered that with
-plain, unoptimized code. **Now it's your turn: implement the same API in any language and framework, make it
-as fast as you can on SQLite, and we'll benchmark it on the same box.**
+How many users can one **$12/month server** (1 vCPU, 2 GB RAM) handle? The languages video put eight
+backends on the same box, with plain day-one code, and the fastest were Rust, Go and Java on SQLite.
+**Now it's your turn: implement the same API in any language and framework, make it as fast as you can on
+SQLite, and we'll benchmark it on the same box.**
 
 ## What's here
 
@@ -72,16 +73,20 @@ CI runs `install.sh` and `test/run.sh` on every pull request, and it must be gre
 
 ## Scoring
 
-We benchmark each passing submission on the same droplet as the videos, with k6 on a separate machine:
+We benchmark each passing submission exactly like the languages video: on the same droplet, with k6 on a
+separate machine.
 
 1. **Warm-up**: 1,000 users for 2 minutes (not scored).
-2. **Find the limit**: `bench/load.js` with more and more users until a run fails.
+2. **Find the limit**: `bench/load.js` starting at 2,500 users, doubling until a run fails, then narrowing
+   down to within 250 users.
 3. **Confirm it**: one 5-minute hold at that number. If it fails, step down 250 users and try again.
 
-**Your score is the most users that pass a 5-minute hold** with p95 under 500 ms, p99 under 1 s and under 1% errors,
-on the `realistic` mix. We also report the `write-heavy` mix. The box is shared hardware, so results within ±10% count as
-a tie. We review the code of everything we run, and a submission that breaks the rules is removed.
+**Your score is the most users that pass a 5-minute hold** with p95 under 500 ms, p99 under 1 s and under 1% errors.
+The box is shared hardware, so results within ±10% count as a tie. We review the code of everything we run, and a
+submission that breaks the rules is removed.
 
-| # | Submission | Users (realistic) | Users (write-heavy) |
-|---|---|---|---|
-| — | `go-net-http` (reference) | TBD | TBD |
+| # | Submission | Users |
+|---|---|---:|
+| 1 | Rust, axum + sqlx (languages video) | 14,050 |
+| 2 | Go, net/http + go-sqlite3 (languages video, [`go-net-http`](submissions/go-net-http/)) | 11,750 |
+| 3 | Java, Spring Boot 3 + sqlite-jdbc (languages video) | 10,250 |

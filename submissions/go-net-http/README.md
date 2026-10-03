@@ -1,6 +1,6 @@
 # go-net-http (reference)
 
-The Go + SQLite implementation from the video, left as a competent developer would ship it on day one.
+The Go + SQLite implementation from the languages video (11,750 users), left as a competent developer would ship it on day one.
 **Nothing is optimized on purpose.**
 
 | | |

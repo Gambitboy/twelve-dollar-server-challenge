@@ -1,5 +1,5 @@
 // Command feedapi is the reference submission (see SPEC.md at the repo root): the Go +
-// SQLite build from the video, unoptimized on purpose. Beat it.
+// SQLite build from the languages video, unoptimized on purpose. Beat it.
 //
 // Standard library net/http with Go 1.22+ pattern routing, encoding/json,
 // database/sql + mattn/go-sqlite3 (cgo) for SQLite and golang-jwt/jwt/v5 for HS256 bearer tokens.
