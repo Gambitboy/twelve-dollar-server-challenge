@@ -42,6 +42,7 @@ k6 run -e VUS=1000 bench/load.js                # optional: load test your serve
 5. **No caching across requests.** Every request reads its data from SQLite while it is being served:
    no response caches, query-result caches, in-memory copies of tables, or remembered JWT verifications
    (verify every token's signature). SQLite's own page cache and `mmap` are fine. That's the database.
+   Reusing prepared statements is fine too: they cache the query plan, not the data.
 6. **Writes are durable before you respond.** A 201 means the row is committed. Use WAL with
    `synchronous=NORMAL` or stronger: no `synchronous=OFF`, no `journal_mode=OFF/MEMORY`, no in-memory database.
    Batching several requests' writes into one transaction (group commit) is allowed if each response waits for
@@ -70,7 +71,7 @@ Open a pull request that adds one folder, `submissions/<language>-<framework>-<g
 | `build.sh` | Builds your app as a normal user (may download pinned dependencies) |
 | `start.sh` | Runs the server **in the foreground**, configured only by the env vars in SPEC.md |
 | `README.md` | Language, framework, driver and versions; **Nginx or direct**; the optimizations you made and why |
-| your code | Under an OSI license (MIT is easiest) |
+| your code | Source only: don't commit build output (`bin/`, `target/`, `node_modules/`, …). Add a `.gitignore` |
 
 For example, the three scripts for a Go server:
 
@@ -89,6 +90,7 @@ exec "$(dirname "$0")/bin/server"
 ```
 
 CI runs `install.sh` and `test/run.sh` on every pull request, and it must be green. Don't touch files outside your folder.
+By submitting, you license your code under the repo's [MIT license](LICENSE).
 
 ## Scoring
 
@@ -101,3 +103,6 @@ separate machine. Every implementation in the video ran behind Nginx.
 3. **Confirm it**: one 5-minute hold at that number. If it fails, step down 250 users and try again.
 
 **Your score is the most users that pass a 5-minute hold** with p95 under 500 ms, p99 under 1 s and under 1% errors.
+
+**After your pull request is merged**, it waits for the next benchmark batch. I run merged submissions in batches,
+not one at a time, on no fixed schedule, and share the results once a batch is done.
