@@ -19,9 +19,13 @@ echo "== build"; bash "$DIR/build.sh"
 echo "== start ($SQLITE_PATH)"
 bash "$DIR/start.sh" > "$(dirname "$SQLITE_PATH")/server.log" 2>&1 &
 PID=$!
-trap 'kill $PID 2>/dev/null; pkill -P $PID 2>/dev/null; wait $PID 2>/dev/null; rm -rf "$(dirname "$SQLITE_PATH")"' EXIT
+cleanup() { pkill -P $PID 2>/dev/null || true; kill $PID 2>/dev/null || true; wait $PID 2>/dev/null || true; rm -rf "$(dirname "$SQLITE_PATH")"; }
+trap cleanup EXIT
 for _ in $(seq 60); do curl -sf "http://$HOST:$PORT/health" >/dev/null && break; sleep 1; done
 curl -sf "http://$HOST:$PORT/health" >/dev/null || { echo "no healthy /health after 60 s"; cat "$(dirname "$SQLITE_PATH")/server.log"; exit 1; }
 
 echo "== test"
-bash "$ROOT/test/test.sh" "http://$HOST:$PORT"
+rc=0; bash "$ROOT/test/test.sh" "http://$HOST:$PORT" || rc=$?
+[ $rc = 0 ] || { echo "== server log (last 30 lines)"; tail -30 "$(dirname "$SQLITE_PATH")/server.log"; }
+trap - EXIT; cleanup
+exit $rc
