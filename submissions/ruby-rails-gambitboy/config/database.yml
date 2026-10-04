@@ -25,3 +25,6 @@ test:
 production:
   <<: *default
   database: <%= ENV["SQLITE_PATH"] %>
+  pragmas:
+    mmap_size: 536870912
+    cache_size: -65536

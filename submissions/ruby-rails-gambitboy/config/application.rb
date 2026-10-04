@@ -19,6 +19,22 @@ module RubyRailsGambitboy
     config.x.booted_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     config.x.jwt_secret = ENV["JWT_SECRET"]
 
+    [
+      Rack::Sendfile,
+      ActionDispatch::Static,
+      Rack::Runtime,
+      Rack::MethodOverride,
+      ActionDispatch::RequestId,
+      ActionDispatch::RemoteIp,
+      ActionDispatch::Cookies,
+      ActionDispatch::Session::CookieStore,
+      ActionDispatch::Flash,
+      ActionDispatch::ContentSecurityPolicy::Middleware,
+      Rack::ConditionalGet,
+      Rack::ETag,
+      Rack::TempfileReaper
+    ].each { |middleware| config.middleware.delete(middleware) }
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

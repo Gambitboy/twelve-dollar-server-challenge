@@ -29,14 +29,19 @@ core with 2 GB and no swap, and k6 from the `grafana/k6` image. `DURATION` and `
   `RETURNING`.
 - **Post reads** are one query: `Post.with_details` joins the author and selects `like_count` as a
   correlated subquery.
-- **Likes** are one `INSERT ... ON CONFLICT DO NOTHING RETURNING post_id` through `Like.insert`. A returned
-  row means 201, none means 200.
+- **Likes** are a primary-key lookup of the post (404 if missing), then one
+  `INSERT ... ON CONFLICT DO NOTHING RETURNING post_id` through `Like.insert`. A returned row means 201,
+  none means 200.
 - **Validation** lives on `Post`: `normalizes` trims the body, `validates` carries the spec's messages.
 - **JWT** is verified on every request with the jwt gem, HS256 only.
-- **Pragmas** are Rails 8's SQLite defaults: `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`,
-  128 MiB `mmap_size`.
+- **Pragmas**: Rails 8's SQLite defaults (`journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`) plus
+  512 MiB `mmap_size` and a 64 MiB page cache, set in `config/database.yml`.
 - **Puma** runs in single mode with 3 threads and a 75 s keep-alive timeout.
 - **YJIT** is on (`RUBY_YJIT_ENABLE=1`).
+- **Log level `warn`** in production, so Rails writes no per-request lines to STDOUT.
+- **Unused middleware removed** in `config/application.rb`: static files, sendfile, runtime header, method
+  override, request id, remote IP, cookies, session, flash, CSP, conditional GET, ETag, tempfile reaper.
+  None of them affect this API's responses, and each one costs CPU on every request.
 
 ## License
 
